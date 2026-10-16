@@ -8,6 +8,7 @@ class Hangman {
   val p = new Person("Adrian Chege", 23)
   println(s"My name is ${p.name} and I am ${p.age} yrs old")
   println("Hello this is a test")
+  println("changes")
  }
 }
 
