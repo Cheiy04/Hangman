@@ -21,7 +21,9 @@ hint
 *startgame(), displayblanks(), verifyletter(), fillblank(), popBallon(), gameover(), victory(), updatescore(), updateHP()
 *quitgame(), timespentplaying(), highscore()
 *
-*
+*Game logic and GameState
+  Logic- implemented as an object which is returns new states, startgame(), guess(), verifyletter(), endgame(), updatescore()
+  State- implemented as a case class with game parameters(word, letterguessed, maxguesses)
 */
 
 // 1. Imports and basic usable variables
