@@ -46,6 +46,14 @@ case class State(hp: Int, word : String) {
     false
   }
   
+  /** update current hp
+   * @return new hp
+   * */
+  
+  /** victory */
+  
+  /** quit game*/
+  
   /**
    * Reveals the answer when hp is 0 and gives the user choice to end game or play again.
   * */
