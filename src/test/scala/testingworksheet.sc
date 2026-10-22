@@ -1,3 +1,5 @@
+import hangman.model.GameState
+
 trait Iterator[A]:
   def hasNext : Boolean
   def next() : A
@@ -33,9 +35,19 @@ class dog(val name : String, val age : Int) extends Pet
 class cat(val name : String, val age : Int) extends Pet
 
 val Thomas = dog("Tubby", 12)
-val Kitty = cat("Nyauu", 21)
+val Kitty = cat("Nyauu", 1)
 
 s"The dog is calle ${Thomas.name} and he is ${Thomas.age} yrs"
 s"The cat is ${Kitty.name}"
 "just a string"
 67
+
+// defines the rules of the game and how the game logic will work
+object HangmanLogic :
+  def startGame(word : String, maxGuesses:Int = 6): GameState =
+    //the start game function returns a game state where the parameters will be(word, guessedWord, maxGuesses)
+    GameState(
+      word,
+      Set.empty,
+      maxGuesses = maxGuesses
+    )

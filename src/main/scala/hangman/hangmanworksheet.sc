@@ -21,12 +21,16 @@ hint
 *startgame(), displayblanks(), verifyletter(), fillblank(), popBallon(), gameover(), victory(), updatescore(), updateHP()
 *quitgame(), timespentplaying(), highscore()
 *
-*
+*Game logic and GameState
+  Logic- implemented as an object which is returns new states, startgame(), guess(), verifyletter(), endgame(), updatescore()
+  State- implemented as a case class with game parameters(word, letterguessed, maxguesses)
 */
 
 // 1. Imports and basic usable variables
 //--------------------------------------------
     //1.1 -->
+
+import hangman.model.GameState
 
 import scala.io.StdIn
 import scala.util.Random
@@ -53,3 +57,16 @@ println(s"Game status: $Status")
 val x = 12
 val y = 11
 assert(x!=y)
+
+
+// defines the rules of the game and how the game logic will work
+object HangmanLogic :
+  def startGame(word : String, maxGuesses:Int = 6): GameState =
+    //the start game function returns a game state where the parameters will be(word, guessedWord, maxGuesses)
+    GameState(
+      word,
+      Set.empty,
+      maxGuesses = maxGuesses
+    )
+    
+
