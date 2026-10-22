@@ -18,7 +18,7 @@ hint
 *adding rope man over crocodile water
 *
 *create tests
-*startgame(), displayblanks(), verifyletter(), fillblank(), popBallon(), gameover(), victory(), updatescore(), updateHP()
+*newgame(), displayblanks(), verifyletter(), fillblank(), popBallon(), gameover(), victory(), updatescore(), updateHP()
 *quitgame(), timespentplaying(), highscore()
 *
 *Game logic and GameState
@@ -66,7 +66,7 @@ object HangmanLogic :
     GameState(
       word,
       Set.empty,
-      maxGuesses = maxGuesses
+      attemptsLeft = maxGuesses
     )
     
 
