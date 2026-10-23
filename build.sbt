@@ -7,5 +7,8 @@ lazy val root = rootProject
       //You can add library dependencies here, for example,
       //"org.scalatest" %% "scalatest" % "3.2.19" % Test,
       //"org.scalameta" %% "munit" % "1.2.3" % Test
-    )
+      "org.scalactic" %% "scalactic" % "3.2.14",
+      "org.scalatest" %% "scalatest" % "3.2.14" % "test"
+
+)
   )
