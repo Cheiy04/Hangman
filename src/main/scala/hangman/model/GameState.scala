@@ -23,7 +23,7 @@ case class GameState(
 
   // instead of 2 guesses there is this one where the word is verified
   def guess(letter: Char): GameState = {
-   if (isFinished) then this
+   if isFinished then this
    else
      val guessedLetter = letter.toLower
      if (guessedWords.contains(guessedLetter)) this
