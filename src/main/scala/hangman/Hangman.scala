@@ -1,6 +1,12 @@
 package hangman
-// this will be the entry point of the entire program and bind the components
 
-class Hangman {
+import hangman.controller.Controller
+import hangman.view.ConsoleUI
 
+object Hangman {
+  def main(args: Array[String]): Unit = {
+    val word = args.headOption.getOrElse("hangman")
+    val controller = new Controller(new ConsoleUI(), word)
+    controller.startGame()
+  }
 }
