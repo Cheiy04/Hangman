@@ -18,7 +18,7 @@ hint
 *adding rope man over crocodile water
 *
 *create tests
-*newgame(), displayblanks(), verifyletter(), fillblank(), popBallon(), gameover(), victory(), updatescore(), updateHP()
+*startgame(), displayblanks(), verifyletter(), fillblank(), popBallon(), gameover(), victory(), updatescore(), updateHP()
 *quitgame(), timespentplaying(), highscore()
 *
 *Game logic and GameState
@@ -60,13 +60,6 @@ assert(x!=y)
 
 
 // defines the rules of the game and how the game logic will work
-object HangmanLogic :
-  def startGame(word : String, maxGuesses:Int = 6): GameState =
-    //the start game function returns a game state where the parameters will be(word, guessedWord, maxGuesses)
-    GameState(
-      word,
-      Set.empty,
-      attemptsLeft = maxGuesses
-    )
+
     
 
