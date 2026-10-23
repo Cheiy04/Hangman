@@ -4,6 +4,6 @@ lazy val root = rootProject
   .settings(
     name := "Hangman",
     libraryDependencies ++= Seq(
-      "org.scalatest" %% "scalatest" % "3.2.19" % Test
+      "org.scalatest" %% "scalatest" % "3.2.20" % Test
     )
   )
