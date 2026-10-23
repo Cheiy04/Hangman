@@ -60,13 +60,6 @@ assert(x!=y)
 
 
 // defines the rules of the game and how the game logic will work
-object HangmanLogic :
-  def startGame(word : String, maxGuesses:Int = 6): GameState =
-    //the start game function returns a game state where the parameters will be(word, guessedWord, maxGuesses)
-    GameState(
-      word,
-      Set.empty,
-      maxGuesses = maxGuesses
-    )
+
     
 
