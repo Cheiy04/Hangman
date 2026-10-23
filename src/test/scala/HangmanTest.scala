@@ -4,8 +4,9 @@ import hangman.model.{GameState, HangmanLogic}
 
 class HangmanTest extends AnyFunSuite with Matchers {
 
+  var gameState: GameState = HangmanLogic.startGame("hangman", 6)
   test("startGame initializes a clean state") {
-    val state = HangmanLogic.startGame("hangman", 6)
+    val state = gameState
 
     state.word shouldBe "hangman"
     state.guessedWords shouldBe Set.empty
@@ -15,7 +16,7 @@ class HangmanTest extends AnyFunSuite with Matchers {
   }
 
   test("guessing a correct letter updates the guessed set without losing a turn") {
-    val state = HangmanLogic.startGame("hangman", 6)
+    val state = gameState
     val updated = HangmanLogic.guess(state, 'h')
 
     updated.guessedWords should contain ('h')
@@ -24,7 +25,7 @@ class HangmanTest extends AnyFunSuite with Matchers {
   }
 
   test("guessing a wrong letter reduces attempts") {
-    val state = HangmanLogic.startGame("hangman", 6)
+    val state = gameState
     val updated = HangmanLogic.guess(state, 'z')
 
     updated.guessedWords should contain ('z')
@@ -32,8 +33,8 @@ class HangmanTest extends AnyFunSuite with Matchers {
     updated.isGameOver shouldBe false
   }
 
- 
+
   test(""){
-    
+
   }
 }
