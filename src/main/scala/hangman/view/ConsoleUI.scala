@@ -1,7 +1,7 @@
 package hangman.view
 
 import scala.io.StdIn
-// add import of game state from hier to do
+import hangman.model.GameState
 // Display content on the console
 class ConsoleUI {
   //initial messages
@@ -10,7 +10,7 @@ class ConsoleUI {
     println("Guess one letter at a time. Type 'quit' to exit.")
 
   //showing the current state iof the game
-  def showState(state: hangman.model.GameState): Unit =
+  def showState(state: GameState): Unit =
     println(s"Word: ${state.maskedWord}")
     println(s"Guessed letters: ${state.guessedWords.mkString(", ")}")
     println(s"Attempts left: ${state.attemptsLeft}")

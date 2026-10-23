@@ -1,10 +1,11 @@
 import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.matchers.should.Matchers
 import hangman.model.{GameState, HangmanLogic}
 
 class HangmanTest extends AnyFunSuite with Matchers {
 
-  var gameState: GameState = HangmanLogic.startGame("hangman", 6)
+  val gameState: GameState = HangmanLogic.startGame("hangman", 6)
   test("startGame initializes a clean state") {
     val state = gameState
 
