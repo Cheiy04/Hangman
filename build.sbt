@@ -1,9 +1,7 @@
-scalaVersion := "3.9.0"
+ThisBuild / scalaVersion := "3.5.2"
 
-lazy val root = rootProject
+lazy val root = (project in file("."))
   .settings(
     name := "Hangman",
-    libraryDependencies ++= Seq(
-      "org.scalatest" %% "scalatest" % "3.2.20" % Test
-    )
+    libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.20" % Test
   )

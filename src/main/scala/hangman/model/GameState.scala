@@ -37,7 +37,4 @@ case class GameState(
          copy(guessedWords = nextGuesses, attemptsLeft = attemptsLeft - 1)
   }
 
-  def victory(): Unit = println(s"You guessed it right! The word was: $word")
-
-  def gameOver(): Unit = println(s"The word was: $word. Better luck next time!")
 }

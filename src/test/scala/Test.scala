@@ -4,6 +4,7 @@ import hangman.model.HangmanLogic
 
 class Test extends AnyWordSpec with Matchers {
 
+  //Testing the Game states and what happens at different states of the game according to the logic written
   "A Hangman game" when {
     "starting a new game" should {
       "initialize a clean state" in {
@@ -69,6 +70,25 @@ class Test extends AnyWordSpec with Matchers {
         val update = HangmanLogic.guess(state,'h')
 
         update.maskedWord shouldBe "h _ _ _ _ _ _"
+      }
+    }
+
+    "Trying to make new guesses for a finished state" should{
+      "return the current game state without making any changes" in{
+        val state = HangmanLogic.startGame("hangman",0)
+        if state.isFinished then
+          state.guess('a') shouldBe state
+      }
+    }
+
+    "Trying to guess a letter that has already been guessed before" should{
+      "return the same state without re-adding the letter into the list" in{
+        val state = HangmanLogic.startGame("hangman",6)
+        val guessedWord = state.guess('a')
+        if !guessedWord.isFinished then
+          guessedWord.guess('a') shouldBe guessedWord
+        //val repeatedGuess = guessedWord.guess('a')
+
       }
     }
 
