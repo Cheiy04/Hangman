@@ -4,6 +4,64 @@ import scala.io.StdIn
 import hangman.model.GameState
 // Display content on the console
 class ConsoleUI {
+  private val hangmanStages: Vector[String] = Vector(
+    """
+#      |-------
+#      |
+#      |
+#      |
+#      |-------
+      """.stripMargin('#'),
+    """
+#      |-------
+#      |    O
+#      |
+#      |
+#      |-------
+      """.stripMargin('#'),
+    """
+#      |-------
+#      |    O
+#      |    |
+#      |
+#      |-------
+      """.stripMargin('#'),
+    """
+#      |-------
+#      |    O
+#      |   /|
+#      |
+#      |-------
+      """.stripMargin('#'),
+    """
+#      |-------
+#      |    O
+#      |   /|\
+#      |
+#      |-------
+      """.stripMargin('#'),
+    """
+#      |-------
+#      |    O
+#      |   /|\
+#      |   /
+#      |-------
+      """.stripMargin('#'),
+    """
+#      |-------
+#      |    O
+#      |   /|\
+#      |   / \
+#      |-------
+      """.stripMargin('#')
+  )
+
+  def hangmanDrawing(state: GameState): String = {
+    val wrongGuesses = state.maxAttempts - state.attemptsLeft
+    val index = wrongGuesses.max(0).min(hangmanStages.length - 1)
+    hangmanStages(index)
+  }
+
   //initial messages
   def showWelcomeMessage(): Unit =
     println("Welcome to Hangman!")
@@ -11,6 +69,7 @@ class ConsoleUI {
 
   //showing the current state iof the game
   def showState(state: GameState): Unit =
+    println(hangmanDrawing(state))
     println(s"Word: ${state.maskedWord}")
     println(s"Guessed letters: ${state.guessedWords.mkString(", ")}")
     println(s"Attempts left: ${state.attemptsLeft}")

@@ -1,8 +1,39 @@
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.matchers.should.Matchers
+import hangman.Hangman
+import hangman.controller.Controller
+import hangman.model.GameState
 import hangman.model.HangmanLogic
+import hangman.view.ConsoleUI
+
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.nio.charset.StandardCharsets
+import scala.collection.mutable.ListBuffer
 
 class Test extends AnyWordSpec with Matchers {
+  private class StubConsoleUI(initialInputs: List[String]) extends ConsoleUI {
+    private var remainingInputs: List[String] = initialInputs
+
+    var welcomeShown: Boolean = false
+    val shownStates: ListBuffer[GameState] = ListBuffer.empty
+    val messages: ListBuffer[String] = ListBuffer.empty
+
+    override def showWelcomeMessage(): Unit =
+      welcomeShown = true
+
+    override def showState(state: GameState): Unit =
+      shownStates += state
+
+    override def askForGuess(): String = {
+      val next = remainingInputs.headOption.getOrElse("quit")
+      remainingInputs = remainingInputs.drop(1)
+      next
+    }
+
+    override def showMessage(message: String): Unit =
+      messages += message
+  }
 
   //Testing the Game states and what happens at different states of the game according to the logic written
   "A Hangman game" when {
@@ -17,6 +48,13 @@ class Test extends AnyWordSpec with Matchers {
         state.isFinished shouldBe false
       }
     }
+    "initialising a game without giving the number of max guesses" should{
+      "use the already given max guesses without having to give it ourselves" in{
+        val state = HangmanLogic.startGame("hangman")
+        state.maxAttempts shouldBe 6
+      }
+    }
+    
 
     "guessing a correct letter" should {
       "update the guessed set without losing a turn" in {
@@ -92,5 +130,147 @@ class Test extends AnyWordSpec with Matchers {
       }
     }
 
+  }
+
+  "The Controller" when {
+    "the player quits" should {
+      "end the game with the quit message" in {
+        val ui = new StubConsoleUI(List("quit"))
+        val controller = new Controller(ui, "hangman")
+
+        controller.startGame()
+
+        ui.welcomeShown shouldBe true
+        ui.messages should contain ("Game ended by player.")
+      }
+    }
+
+    "the player enters invalid input" should {
+      "ask for a valid letter and keep playing" in {
+        val ui = new StubConsoleUI(List("1", "quit"))
+        val controller = new Controller(ui, "hangman")
+
+        controller.startGame()
+
+        ui.messages should contain ("Please enter a valid letter.")
+        ui.messages should contain ("Game ended by player.")
+      }
+    }
+
+    "the player guesses the full word" should {
+      "announce the win" in {
+        val ui = new StubConsoleUI(List("a"))
+        val controller = new Controller(ui, "a")
+
+        controller.startGame()
+
+        ui.messages should contain ("You won! The word was 'a'.")
+      }
+    }
+
+    "the player runs out of attempts" should {
+      "announce game over" in {
+        val ui = new StubConsoleUI(List("z"))
+        val controller = new Controller(ui, "a", maxAttempts = 1)
+
+        controller.startGame()
+
+        ui.messages should contain ("Game over! The word was 'a'.")
+      }
+    }
+
+    "the player loses after a failed guess" should {
+      "reach the game-over branch in the controller" in {
+        val ui = new StubConsoleUI(List("z"))
+        val controller = new Controller(ui, "a", maxAttempts = 1)
+
+        controller.startGame()
+
+        ui.messages should contain ("Game over! The word was 'a'.")
+      }
+    }
+  }
+
+  "The ConsoleUI" when {
+    "showing the welcome message" should {
+      "print the game instructions" in {
+        val ui = new ConsoleUI
+        val output = new ByteArrayOutputStream()
+
+        Console.withOut(output) {
+          ui.showWelcomeMessage()
+        }
+
+        val text = output.toString(StandardCharsets.UTF_8)
+        text should include ("Welcome to Hangman!")
+        text should include ("Guess one letter at a time. Type 'quit' to exit.")
+      }
+    }
+
+    "showing the game state" should {
+      "include hangman drawing and state values" in {
+        val ui = new ConsoleUI
+        val state = GameState(word = "cat", guessedWords = Set('c', 'x'), attemptsLeft = 4, maxAttempts = 6)
+        val output = new ByteArrayOutputStream()
+
+        Console.withOut(output) {
+          ui.showState(state)
+        }
+
+        val text = output.toString(StandardCharsets.UTF_8)
+        text should include ("|    O")
+        text should include ("|    |")
+        text should include ("Word: c _ _")
+        text should include ("Guessed letters: c, x")
+        text should include ("Attempts left: 4")
+      }
+    }
+
+    "asking for a guess" should {
+      "trim the input value" in {
+        val ui = new ConsoleUI
+        val output = new ByteArrayOutputStream()
+        val input = new ByteArrayInputStream("  a  \n".getBytes(StandardCharsets.UTF_8))
+
+        val guess = Console.withIn(input) {
+          Console.withOut(output) {
+            ui.askForGuess()
+          }
+        }
+
+        guess shouldBe "a"
+        output.toString(StandardCharsets.UTF_8) should include ("Enter a letter: ")
+      }
+    }
+
+    "selecting a hangman drawing" should {
+      "show the final drawing after all attempts are used" in {
+        val ui = new ConsoleUI
+        val state = GameState(word = "cat", guessedWords = Set.empty, attemptsLeft = 0, maxAttempts = 6)
+
+        val drawing = ui.hangmanDrawing(state)
+
+        drawing should include ("|   / \\")
+      }
+    }
+  }
+
+  "The Hangman entrypoint" when {
+    "main is called" should {
+      "start a playable game loop" in {
+        val output = new ByteArrayOutputStream()
+        val input = new ByteArrayInputStream("quit\n".getBytes(StandardCharsets.UTF_8))
+
+        Console.withIn(input) {
+          Console.withOut(output) {
+            Hangman.main(Array("scala"))
+          }
+        }
+
+        val text = output.toString(StandardCharsets.UTF_8)
+        text should include ("Welcome to Hangman!")
+        text should include ("Game ended by player.")
+      }
+    }
   }
 }

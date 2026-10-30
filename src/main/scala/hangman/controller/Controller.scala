@@ -7,8 +7,6 @@ import hangman.view.ConsoleUI
 class Controller(private val ui: ConsoleUI, private val word: String, private val maxAttempts: Int = 6) {
   private var state: GameState = HangmanLogic.startGame(word, maxAttempts)
 
-  def currentState: GameState = state
-
   //Our controller starts the game and nests the play loop function
   def startGame(): Unit = {
     ui.showWelcomeMessage()
@@ -32,10 +30,12 @@ class Controller(private val ui: ConsoleUI, private val word: String, private va
       } else {
         state = HangmanLogic.guess(state, letter)
         if (state.isWon) {
+          ui.showState(state)
           ui.showMessage(s"You won! The word was '${state.word}'.")
           return
         }
         if (state.isGameOver) {
+          ui.showState(state)
           ui.showMessage(s"Game over! The word was '${state.word}'.")
           return
         }
