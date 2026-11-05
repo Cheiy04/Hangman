@@ -1,22 +1,20 @@
 package hangman.controller
 
-import hangman.model.{GameState, HangmanLogic}
+import hangman.model.HangmanModel
 import hangman.view.ConsoleUI
 
-// A class controler to initailies the flow of the game
 class Controller(private val ui: ConsoleUI, private val word: String, private val maxAttempts: Int = 6) {
-  private var state: GameState = HangmanLogic.startGame(word, maxAttempts)
+  private val model = new HangmanModel
+  model.addObserver(ui)
 
-  //Our controller starts the game and nests the play loop function
   def startGame(): Unit = {
     ui.showWelcomeMessage()
+    model.startGame(word, maxAttempts)
     playLoop()
   }
 
   private def playLoop(): Unit = {
-    while (state.isPlaying) {
-      ui.showState(state)
-
+    while (model.currentState.isPlaying) {
       val input = ui.askForGuess()
       if (input.equalsIgnoreCase("quit")) {
         ui.showMessage("Game ended by player.")
@@ -28,17 +26,13 @@ class Controller(private val ui: ConsoleUI, private val word: String, private va
       if (!letter.isLetter) {
         ui.showMessage("Please enter a valid letter.")
       } else {
-        state = HangmanLogic.guess(state, letter)
-        if (state.isWon) {
-          ui.showState(state)
+        val state = model.guess(letter)
+        if state.isWon then
           ui.showMessage(s"You won! The word was '${state.word}'.")
           return
-        }
-        if (state.isGameOver) {
-          ui.showState(state)
+        if state.isGameOver then
           ui.showMessage(s"Game over! The word was '${state.word}'.")
           return
-        }
       }
     }
   }
