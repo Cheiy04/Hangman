@@ -1,17 +1,23 @@
-import org.scalatest.wordspec.AnyWordSpec
-import org.scalatest.matchers.should.Matchers
 import hangman.Hangman
 import hangman.controller.Controller
-import hangman.model.GameState
-import hangman.model.HangmanLogic
+import hangman.model.{GameState, HangmanModel}
+import hangman.observer.Observer
 import hangman.view.ConsoleUI
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import java.nio.charset.StandardCharsets
 import scala.collection.mutable.ListBuffer
 
 class Test extends AnyWordSpec with Matchers {
+  private class RecordingObserver extends Observer[GameState] {
+    val updates: ListBuffer[GameState] = ListBuffer.empty
+
+    override def update(state: GameState): Unit =
+      updates += state
+  }
+
   private class StubConsoleUI(initialInputs: List[String]) extends ConsoleUI {
     private var remainingInputs: List[String] = initialInputs
 
@@ -35,227 +41,267 @@ class Test extends AnyWordSpec with Matchers {
       messages += message
   }
 
-  //Testing the Game states and what happens at different states of the game according to the logic written
-  "A Hangman game" when {
-    "starting a new game" should {
-      "initialize a clean state" in {
-        val state = HangmanLogic.startGame("hangman", 6)
+  "GameState" when {
+    "created" should {
+      "represent a new game with the configured attempts" in {
+        val state = GameState("hangman", Set.empty, 6, 6)
 
         state.word shouldBe "hangman"
-        state.guessedWords shouldBe Set.empty
+        state.guessedWords shouldBe empty
         state.attemptsLeft shouldBe 6
+        state.maxAttempts shouldBe 6
         state.isPlaying shouldBe true
         state.isFinished shouldBe false
       }
-    }
-    "initialising a game without giving the number of max guesses" should{
-      "use the already given max guesses without having to give it ourselves" in{
-        val state = HangmanLogic.startGame("hangman")
-        state.maxAttempts shouldBe 6
+
+      "use six attempts by default" in {
+        GameState("hangman", Set.empty, 6).maxAttempts shouldBe 6
       }
     }
-    
 
-    "guessing a correct letter" should {
-      "update the guessed set without losing a turn" in {
-        val state = HangmanLogic.startGame("hangman", 6)
-        val updated = HangmanLogic.guess(state, 'h')
+    "receiving a guess" should {
+      "add a correct letter without reducing attempts" in {
+        val updated = GameState("hangman", Set.empty, 6, 6).guess('H')
+
         updated.guessedWords should contain('h')
         updated.attemptsLeft shouldBe 6
         updated.isWon shouldBe false
       }
-    }
 
-    "guessing a wrong letter" should {
-      "reduce attempts" in {
-        val state = HangmanLogic.startGame("hangman", 6)
-        val updated = HangmanLogic.guess(state, 'z')
+      "add a wrong letter and reduce attempts" in {
+        val updated = GameState("hangman", Set.empty, 6, 6).guess('z')
 
         updated.guessedWords should contain('z')
         updated.attemptsLeft shouldBe 5
         updated.isGameOver shouldBe false
       }
-    }
 
-    "all letters have been guessed" should{
-      "show state game won" in{
-        val state = HangmanLogic.startGame("cat", 6)
-        val addC = HangmanLogic.guess(state, 'c')
-        val addA = HangmanLogic.guess(addC, 'a')
-        val addT = HangmanLogic.guess(addA, 't')
+      "not change for a repeated letter" in {
+        val state = GameState("hangman", Set.empty, 6, 6).guess('a')
 
-        addT.isWon shouldBe true
-        addT.isFinished shouldBe true
-        addT.isPlaying shouldBe false
+        state.guess('A') shouldBe state
+      }
+
+      "not change after the game is finished" in {
+        val state = GameState("hangman", Set.empty, 0, 0)
+
+        state.guess('a') shouldBe state
       }
     }
 
-    "no more attempts" should {
-      "show that game is over" in{
-        val state = HangmanLogic.startGame("cat", 1)
-        val lastGuess = HangmanLogic.guess(state, 'w')
+    "all letters have been guessed" should {
+      "be won and finished" in {
+        val initial = GameState("cat", Set.empty, 6, 6)
+        val won = initial.guess('c').guess('a').guess('t')
 
-        lastGuess.attemptsLeft shouldBe 0
-        lastGuess.isFinished shouldBe true
-        lastGuess.isGameOver shouldBe true
-        lastGuess.isWon shouldBe false
+        won.isWon shouldBe true
+        won.isFinished shouldBe true
+        won.isPlaying shouldBe false
       }
     }
 
-    "Words that have not yet been guessed correctly" should{
-      "hide the final word with dashes" in{
-        val state = HangmanLogic.startGame("hangman", 6)
-        val update = HangmanLogic.guess(state,'h')
+    "running out of attempts" should {
+      "be game over without being a win" in {
+        val gameOver = GameState("cat", Set.empty, 1, 1).guess('w')
 
-        update.maskedWord shouldBe "h _ _ _ _ _ _"
+        gameOver.attemptsLeft shouldBe 0
+        gameOver.isGameOver shouldBe true
+        gameOver.isFinished shouldBe true
+        gameOver.isWon shouldBe false
       }
     }
 
-    "Trying to make new guesses for a finished state" should{
-      "return the current game state without making any changes" in{
-        val state = HangmanLogic.startGame("hangman",0)
-        if state.isFinished then
-          state.guess('a') shouldBe state
+    "displaying the word" should {
+      "mask unguessed letters and reveal guessed letters" in {
+        val state = GameState("hangman", Set('h', 'a'), 6, 6)
+
+        state.maskedWord shouldBe "h a _ _ _ a _"
       }
     }
-
-    "Trying to guess a letter that has already been guessed before" should{
-      "return the same state without re-adding the letter into the list" in{
-        val state = HangmanLogic.startGame("hangman",6)
-        val guessedWord = state.guess('a')
-        if !guessedWord.isFinished then
-          guessedWord.guess('a') shouldBe guessedWord
-        //val repeatedGuess = guessedWord.guess('a')
-
-      }
-    }
-
   }
 
-  "The Controller" when {
+  "HangmanModel" when {
+    "starting a game" should {
+      "store and notify observers of the initial state" in {
+        val model = new HangmanModel
+        val observer = new RecordingObserver
+
+        model.addObserver(observer)
+        val state = model.startGame("hangman", 4)
+
+        model.currentState shouldBe state
+        observer.updates should contain only state
+      }
+    }
+
+    "receiving a guess" should {
+      "update its state and notify observers" in {
+        val model = new HangmanModel
+        val observer = new RecordingObserver
+        model.addObserver(observer)
+        model.startGame("cat")
+
+        val updated = model.guess('c')
+
+        model.currentState shouldBe updated
+        observer.updates should contain theSameElementsInOrderAs Seq(
+          GameState("cat", Set.empty, 6, 6),
+          updated
+        )
+      }
+
+      "not notify observers when the state does not change" in {
+        val model = new HangmanModel
+        val observer = new RecordingObserver
+        model.addObserver(observer)
+        model.startGame("cat")
+        model.guess('x')
+
+        model.guess('X') shouldBe model.currentState
+        observer.updates should have size 2
+      }
+    }
+
+    "managing observers" should {
+      "avoid duplicate registrations" in {
+        val model = new HangmanModel
+        val observer = new RecordingObserver
+        model.addObserver(observer)
+        model.addObserver(observer)
+
+        model.startGame("cat")
+
+        observer.updates should have size 1
+      }
+
+      "stop notifying a removed observer" in {
+        val model = new HangmanModel
+        val observer = new RecordingObserver
+        model.addObserver(observer)
+        model.removeObserver(observer)
+
+        model.startGame("cat")
+
+        observer.updates shouldBe empty
+      }
+    }
+
+    "queried before a game starts" should {
+      "report that no current state exists" in {
+        val model = new HangmanModel
+
+        an[IllegalStateException] should be thrownBy model.currentState
+      }
+    }
+  }
+
+  "Controller" when {
     "the player quits" should {
       "end the game with the quit message" in {
         val ui = new StubConsoleUI(List("quit"))
-        val controller = new Controller(ui, "hangman")
 
-        controller.startGame()
+        new Controller(ui, "hangman").startGame()
 
         ui.welcomeShown shouldBe true
-        ui.messages should contain ("Game ended by player.")
+        ui.shownStates should have size 1
+        ui.messages should contain("Game ended by player.")
       }
     }
 
     "the player enters invalid input" should {
-      "ask for a valid letter and keep playing" in {
+      "keep the game running until a valid command is entered" in {
         val ui = new StubConsoleUI(List("1", "quit"))
-        val controller = new Controller(ui, "hangman")
 
-        controller.startGame()
+        new Controller(ui, "hangman").startGame()
 
-        ui.messages should contain ("Please enter a valid letter.")
-        ui.messages should contain ("Game ended by player.")
+        ui.messages should contain("Please enter a valid letter.")
+        ui.messages should contain("Game ended by player.")
+        ui.shownStates should have size 1
       }
     }
 
-    "the player guesses the full word" should {
-      "announce the win" in {
+    "the player wins" should {
+      "announce the completed word" in {
         val ui = new StubConsoleUI(List("a"))
-        val controller = new Controller(ui, "a")
 
-        controller.startGame()
+        new Controller(ui, "a").startGame()
 
-        ui.messages should contain ("You won! The word was 'a'.")
+        ui.shownStates.last.isWon shouldBe true
+        ui.messages should contain("You won! The word was 'a'.")
       }
     }
 
     "the player runs out of attempts" should {
       "announce game over" in {
         val ui = new StubConsoleUI(List("z"))
-        val controller = new Controller(ui, "a", maxAttempts = 1)
 
-        controller.startGame()
+        new Controller(ui, "a", maxAttempts = 1).startGame()
 
-        ui.messages should contain ("Game over! The word was 'a'.")
-      }
-    }
-
-    "the player loses after a failed guess" should {
-      "reach the game-over branch in the controller" in {
-        val ui = new StubConsoleUI(List("z"))
-        val controller = new Controller(ui, "a", maxAttempts = 1)
-
-        controller.startGame()
-
-        ui.messages should contain ("Game over! The word was 'a'.")
+        ui.shownStates.last.isGameOver shouldBe true
+        ui.messages should contain("Game over! The word was 'a'.")
       }
     }
   }
 
-  "The ConsoleUI" when {
+  "ConsoleUI" when {
     "showing the welcome message" should {
       "print the game instructions" in {
-        val ui = new ConsoleUI
         val output = new ByteArrayOutputStream()
 
         Console.withOut(output) {
-          ui.showWelcomeMessage()
+          new ConsoleUI().showWelcomeMessage()
         }
 
         val text = output.toString(StandardCharsets.UTF_8)
-        text should include ("Welcome to Hangman!")
-        text should include ("Guess one letter at a time. Type 'quit' to exit.")
+        text should include("Welcome to Hangman!")
+        text should include("Guess one letter at a time. Type 'quit' to exit.")
       }
     }
 
-    "showing the game state" should {
-      "include hangman drawing and state values" in {
-        val ui = new ConsoleUI
-        val state = GameState(word = "cat", guessedWords = Set('c', 'x'), attemptsLeft = 4, maxAttempts = 6)
+    "receiving an observed state" should {
+      "render the drawing and state values" in {
         val output = new ByteArrayOutputStream()
+        val state = GameState("cat", Set('c', 'x'), 4, 6)
 
         Console.withOut(output) {
-          ui.showState(state)
+          new ConsoleUI().update(state)
         }
 
         val text = output.toString(StandardCharsets.UTF_8)
-        text should include ("|    O")
-        text should include ("|    |")
-        text should include ("Word: c _ _")
-        text should include ("Guessed letters: c, x")
-        text should include ("Attempts left: 4")
+        text should include("|    O")
+        text should include("|    |")
+        text should include("Word: c _ _")
+        text should include("Guessed letters: c, x")
+        text should include("Attempts left: 4")
       }
     }
 
     "asking for a guess" should {
-      "trim the input value" in {
-        val ui = new ConsoleUI
+      "trim the input" in {
         val output = new ByteArrayOutputStream()
         val input = new ByteArrayInputStream("  a  \n".getBytes(StandardCharsets.UTF_8))
 
         val guess = Console.withIn(input) {
           Console.withOut(output) {
-            ui.askForGuess()
+            new ConsoleUI().askForGuess()
           }
         }
 
         guess shouldBe "a"
-        output.toString(StandardCharsets.UTF_8) should include ("Enter a letter: ")
+        output.toString(StandardCharsets.UTF_8) should include("Enter a letter: ")
       }
     }
 
-    "selecting a hangman drawing" should {
+    "selecting a drawing" should {
       "show the final drawing after all attempts are used" in {
-        val ui = new ConsoleUI
-        val state = GameState(word = "cat", guessedWords = Set.empty, attemptsLeft = 0, maxAttempts = 6)
+        val state = GameState("cat", Set.empty, 0, 6)
 
-        val drawing = ui.hangmanDrawing(state)
-
-        drawing should include ("|   / \\")
+        new ConsoleUI().hangmanDrawing(state) should include("|   / \\")
       }
     }
   }
 
-  "The Hangman entrypoint" when {
+  "Hangman" when {
     "main is called" should {
       "start a playable game loop" in {
         val output = new ByteArrayOutputStream()
@@ -268,8 +314,8 @@ class Test extends AnyWordSpec with Matchers {
         }
 
         val text = output.toString(StandardCharsets.UTF_8)
-        text should include ("Welcome to Hangman!")
-        text should include ("Game ended by player.")
+        text should include("Welcome to Hangman!")
+        text should include("Game ended by player.")
       }
     }
   }
