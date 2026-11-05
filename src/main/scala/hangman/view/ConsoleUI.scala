@@ -2,8 +2,9 @@ package hangman.view
 
 import scala.io.StdIn
 import hangman.model.GameState
+import hangman.observer.Observer
 // Display content on the console
-class ConsoleUI {
+class ConsoleUI extends Observer[GameState] {
   private val hangmanStages: Vector[String] = Vector(
     """
 #      |-------
@@ -73,6 +74,10 @@ class ConsoleUI {
     println(s"Word: ${state.maskedWord}")
     println(s"Guessed letters: ${state.guessedWords.mkString(", ")}")
     println(s"Attempts left: ${state.attemptsLeft}")
+
+  // the observer function is implemented here
+  override def update(state: GameState): Unit =
+    showState(state)
 
   //taking the input from user
   def askForGuess(): String =
