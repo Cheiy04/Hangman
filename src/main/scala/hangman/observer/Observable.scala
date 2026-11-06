@@ -1,16 +1,14 @@
 package hangman.observer
 
-import scala.collection.mutable.ListBuffer
-
 trait Observable[T] {
-  private val observers = ListBuffer.empty[Observer[T]]
+  private var observers: Set[Observer[T]] = Set.empty
 
   def addObserver(observer: Observer[T]): Unit =
-    if !observers.contains(observer) then observers += observer
+    observers += observer
 
   def removeObserver(observer: Observer[T]): Unit =
     observers -= observer
 
   protected def notifyObservers(value: T): Unit =
-    observers.toList.foreach(_.update(value))
+    observers.foreach(_.update(value))
 }
