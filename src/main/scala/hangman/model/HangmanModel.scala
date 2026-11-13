@@ -1,8 +1,6 @@
 package hangman.model
 
-import hangman.observer.Observable
-
-class HangmanModel extends Observable[GameUpdate] {
+class HangmanModel extends GameModel {
   private var state: Option[GameState] = None
 
   def currentState: GameState =
@@ -16,7 +14,7 @@ class HangmanModel extends Observable[GameUpdate] {
       maxAttempts = maxGuesses
     )
     state = Some(newState)
-    notifyObservers(GameUpdate(newState, Some("Welcome to Hangman!\nGuess one letter at a time. Type 'quit' to exit.")))
+    notifyObservers(GameUpdate(newState, Some(GameEvent.GameStarted)))
     newState
   }
 
@@ -25,18 +23,18 @@ class HangmanModel extends Observable[GameUpdate] {
     val newState = previousState.guess(letter)
     state = Some(newState)
     if newState != previousState then
-      val message =
-        if newState.isWon then Some(s"You won! The word was '${newState.word}'.")
-        else if newState.isGameOver then Some(s"Game over! The word was '${newState.word}'.")
+      val event =
+        if newState.isWon then Some(GameEvent.Won)
+        else if newState.isGameOver then Some(GameEvent.GameOver)
         else None
-      notifyObservers(GameUpdate(newState, message))
+      notifyObservers(GameUpdate(newState, event))
     newState
   }
 
   def invalidInput(): Unit =
-    notifyObservers(GameUpdate(currentState, Some("Please enter a valid letter.")))
+    notifyObservers(GameUpdate(currentState, Some(GameEvent.InvalidInput)))
 
   def quit(): Unit =
-    notifyObservers(GameUpdate(currentState, Some("Game ended by player.")))
+    notifyObservers(GameUpdate(currentState, Some(GameEvent.Quit)))
 
 }
