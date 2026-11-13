@@ -1,7 +1,7 @@
 package hangman.view
 
-import hangman.model.{GameEvent, GameState, GameUpdate}
 import hangman.common.GameInput
+import hangman.model.{GameEvent, GameState, GameUpdate}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -68,6 +68,20 @@ class ConsoleUITest extends AnyWordSpec with Matchers {
       received shouldBe Some(GameInput.Guess('a'))
     }
 
+    "show the input prompt before reading a guess" in {
+      val input = new ByteArrayInputStream("a\n".getBytes(StandardCharsets.UTF_8))
+      val output = new ByteArrayOutputStream
+      val ui = new ConsoleUI(_ => false)
+
+      Console.withIn(input) {
+        Console.withOut(output) {
+          ui.startInput()
+        }
+      }
+
+      output.toString(StandardCharsets.UTF_8) should include("Enter a letter: ")
+    }
+
     "send invalid input to the callback" in {
       val input = new ByteArrayInputStream("ab\n".getBytes(StandardCharsets.UTF_8))
       var received: Option[GameInput] = None
@@ -94,6 +108,46 @@ class ConsoleUITest extends AnyWordSpec with Matchers {
 
     "show the final hangman drawing" in {
       new ConsoleUI(ignoreInput).hangmanDrawing(GameState("cat", Set.empty, 0, 6)) should include("|   / \\")
+    }
+
+    "show the correct drawing for each number of wrong guesses" in {
+      val ui = new ConsoleUI(ignoreInput)
+      val expectedStages = Map(
+        6 -> "|-------\n      |\n      |\n      |\n      |-------",
+        5 -> "|    O",
+        4 -> "|    |",
+        3 -> "|   /|",
+        2 -> "|   /|\\",
+        1 -> "|   /",
+        0 -> "|   / \\"
+      )
+
+      expectedStages.foreach { case (attemptsLeft, expectedStage) =>
+        ui.hangmanDrawing(GameState("cat", Set.empty, attemptsLeft, 6)) should include(expectedStage)
+      }
+    }
+
+    "clamp excessive wrong guesses to the final drawing" in {
+      val ui = new ConsoleUI(ignoreInput)
+      val finalDrawing = ui.hangmanDrawing(GameState("cat", Set.empty, 0, 6))
+
+      ui.hangmanDrawing(GameState("cat", Set.empty, -4, 6)) shouldBe finalDrawing
+    }
+
+    "treat end-of-input as quit" in {
+      val input = new ByteArrayInputStream(Array.emptyByteArray)
+      var received: Option[GameInput] = None
+
+      val ui = new ConsoleUI(gameInput => {
+        received = Some(gameInput)
+        false
+      })
+
+      Console.withIn(input) {
+        ui.startInput()
+      }
+
+      received shouldBe Some(GameInput.Quit)
     }
   }
 }
