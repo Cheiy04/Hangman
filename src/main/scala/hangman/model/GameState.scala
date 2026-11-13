@@ -11,7 +11,7 @@ case class GameState(
   def isWon: Boolean =
    normalizedWord.forall(ch => guessedWords.contains(ch))
 
-  def isGameOver: Boolean = attemptsLeft <= 0
+  def isGameOver: Boolean = attemptsLeft == 0
 
   def isFinished: Boolean = isWon || isGameOver
 
