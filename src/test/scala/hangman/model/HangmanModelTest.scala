@@ -47,6 +47,7 @@ class HangmanModelTest extends AnyWordSpec with Matchers {
 
         model.currentState shouldBe state
         observer.updates.last.state shouldBe state
+        observer.updates.last.event shouldBe None
       }
 
       "publish domain events instead of presentation messages" in {
@@ -101,7 +102,8 @@ class HangmanModelTest extends AnyWordSpec with Matchers {
 
     "queried before starting" should {
       "throw an explicit error" in {
-        an[IllegalStateException] should be thrownBy new HangmanModel().currentState
+        val error = the[IllegalStateException] thrownBy new HangmanModel().currentState
+        error.getMessage shouldBe "The game has not been started."
       }
     }
   }
