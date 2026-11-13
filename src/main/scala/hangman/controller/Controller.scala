@@ -1,40 +1,30 @@
 package hangman.controller
 
-import hangman.model.HangmanModel
-import hangman.view.ConsoleUI
+import hangman.common.GameInput
+import hangman.model.GameModel
 
 class Controller(
-    private val ui: ConsoleUI,
-    private val model: HangmanModel,
+    private val model: GameModel,
     private val word: String,
     private val maxAttempts: Int = 6
 ) {
-  model.addObserver(ui)
-
   def startGame(): Unit = {
     model.startGame(word, maxAttempts)
-    playLoop()
   }
 
-  private def playLoop(): Unit = {
-    while (model.currentState.isPlaying) {
-      val input = ui.askForGuess()
-      if (input.equalsIgnoreCase("quit")) {
+  def handleInput(input: GameInput): Boolean = {
+    input match {
+      case GameInput.Guess(letter) =>
+        model.guess(letter)
+        model.currentState.isPlaying
+
+      case GameInput.Quit =>
         model.quit()
-        return
-      }
-      
-      // checking if value entered is valid
-      val letter = input.headOption.getOrElse(' ')
-      if (!letter.isLetter) {
+        false
+
+      case GameInput.Invalid =>
         model.invalidInput()
-      } else {
-        val state = model.guess(letter)
-        if state.isWon then
-          return
-        if state.isGameOver then
-          return
-      }
+        model.currentState.isPlaying
     }
   }
 }
