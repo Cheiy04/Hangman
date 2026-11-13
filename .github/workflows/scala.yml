@@ -1,16 +1,22 @@
-name: Build
+name: Scala CI
 
 on:
   push:
     branches:
       - master
+      - develop
   pull_request:
+    branches:
+      - master
+      - develop
     types: [opened, synchronize, reopened]
 
 jobs:
-  sonarqube:
-    name: SonarQube
+  build:
+    name: Build, test, coverage, and analysis
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Check out repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
@@ -36,6 +42,12 @@ jobs:
 
       - name: Run tests and generate coverage
         run: sbt --error clean coverage test coverageReport
+
+      - name: Upload coverage to Coveralls
+        run: sbt --error coveralls
+        env:
+          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+          CI_BRANCH: ${{ github.head_ref || github.ref_name }}
 
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@4d1dc0c91ee400dcf8a6dddf2f705ac36542e304 # v8.4.0
