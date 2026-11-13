@@ -1,55 +1,77 @@
 package hangman.controller
 
-import hangman.model.HangmanModel
-import hangman.model.{GameState, GameUpdate}
-import hangman.view.ConsoleUI
+import hangman.common.GameInput
+import hangman.model.{GameModel, GameState, HangmanModel}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
 class ControllerTest extends AnyWordSpec with Matchers {
-  private class StubConsoleUI(initialInputs: List[String]) extends ConsoleUI {
-    private var inputs = initialInputs
-    var shownStates = List.empty[GameState]
-    var messages = List.empty[String]
+  private class StubModel extends GameModel {
+    private var state: Option[GameState] = None
 
-    override def update(update: GameUpdate): Unit = {
-      shownStates = shownStates :+ update.state
-      messages = messages ++ update.message
+    override def currentState: GameState =
+      state.getOrElse(throw new IllegalStateException("The game has not been started."))
+
+    override def startGame(word: String, maxGuesses: Int): GameState = {
+      val newState = GameState(word, Set.empty, maxGuesses, maxGuesses)
+      state = Some(newState)
+      newState
     }
-    override def askForGuess(): String = {
-      val input = inputs.headOption.getOrElse("quit")
-      inputs = inputs.drop(1)
-      input
+
+    override def guess(letter: Char): GameState = {
+      val newState = currentState.guess(letter)
+      state = Some(newState)
+      newState
     }
+
+    override def invalidInput(): Unit = ()
+
+    override def quit(): Unit = ()
   }
 
   "Controller" when {
     "started" should {
-      "use the injected model and observer view" in {
-        val ui = new StubConsoleUI(List("quit"))
-        val model = new HangmanModel
-        new Controller(ui, model, "hangman").startGame()
+      "work with the model abstraction" in {
+        val model = new StubModel
+        val controller = new Controller(model, "a")
 
-        ui.shownStates should have size 2
+        controller.startGame()
+        controller.handleInput(GameInput.Guess('a')) shouldBe false
+        model.currentState.isWon shouldBe true
+      }
+
+      "start the injected model without reading input" in {
+        val model = new HangmanModel
+        new Controller(model, "hangman").startGame()
+
         model.currentState.word shouldBe "hangman"
-        ui.messages should contain("Game ended by player.")
       }
 
       "handle invalid input and a win" in {
-        val ui = new StubConsoleUI(List("1", "a"))
-        new Controller(ui, new HangmanModel, "a").startGame()
+        val model = new HangmanModel
+        val controller = new Controller(model, "a")
+        controller.startGame()
 
-        ui.messages should contain("Please enter a valid letter.")
-        ui.messages should contain("You won! The word was 'a'.")
-        ui.shownStates.last.isWon shouldBe true
+        controller.handleInput(GameInput.Invalid) shouldBe true
+        controller.handleInput(GameInput.Guess('a')) shouldBe false
+        model.currentState.isWon shouldBe true
       }
 
       "announce game over" in {
-        val ui = new StubConsoleUI(List("z"))
-        new Controller(ui, new HangmanModel, "a", 1).startGame()
+        val model = new HangmanModel
+        val controller = new Controller(model, "a", 1)
+        controller.startGame()
 
-        ui.messages should contain("Game over! The word was 'a'.")
-        ui.shownStates.last.isGameOver shouldBe true
+        controller.handleInput(GameInput.Guess('z')) shouldBe false
+        model.currentState.isGameOver shouldBe true
+      }
+
+      "stop input processing when the player quits" in {
+        val model = new HangmanModel
+        val controller = new Controller(model, "a")
+        controller.startGame()
+
+        controller.handleInput(GameInput.Quit) shouldBe false
       }
     }
   }
