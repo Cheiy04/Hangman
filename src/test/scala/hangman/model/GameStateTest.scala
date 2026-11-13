@@ -44,6 +44,10 @@ class GameStateTest extends AnyWordSpec with Matchers {
         state.isFinished shouldBe true
       }
 
+      "not be won when only some letters are guessed" in {
+        GameState("cat", Set('c'), 6, 6).isWon shouldBe false
+      }
+
       "be game over when attempts reach zero" in {
         val state = GameState("cat", Set.empty, 1, 1).guess('w')
         state.isGameOver shouldBe true
