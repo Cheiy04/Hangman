@@ -68,6 +68,18 @@ class ConsoleUITest extends AnyWordSpec with Matchers {
       received shouldBe Some(GameInput.Guess('a'))
     }
 
+    "send invalid input to the callback" in {
+      val input = new ByteArrayInputStream("ab\n".getBytes(StandardCharsets.UTF_8))
+      var received: Option[GameInput] = None
+      val ui = new ConsoleUI(gameInput => {
+        received = Some(gameInput)
+        false
+      })
+
+      Console.withIn(input) { ui.startInput() }
+      received shouldBe Some(GameInput.Invalid)
+    }
+
     "continue reading while the callback accepts input" in {
       val input = new ByteArrayInputStream("a\nquit\n".getBytes(StandardCharsets.UTF_8))
       var received = List.empty[GameInput]
