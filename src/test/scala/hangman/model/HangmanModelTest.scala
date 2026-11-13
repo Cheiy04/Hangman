@@ -21,7 +21,18 @@ class HangmanModelTest extends AnyWordSpec with Matchers {
 
         model.currentState shouldBe state
         observer.updates.head.state shouldBe state
-        observer.updates.head.message shouldBe defined
+        observer.updates.head.event shouldBe Some(GameEvent.GameStarted)
+      }
+
+      "publish a quit event without presentation text" in {
+        val model = new HangmanModel
+        val observer = new RecordingObserver
+        model.addObserver(observer)
+        model.startGame("hangman")
+
+        model.quit()
+
+        observer.updates.last.event shouldBe Some(GameEvent.Quit)
       }
     }
 
@@ -36,6 +47,30 @@ class HangmanModelTest extends AnyWordSpec with Matchers {
 
         model.currentState shouldBe state
         observer.updates.last.state shouldBe state
+      }
+
+      "publish domain events instead of presentation messages" in {
+        val model = new HangmanModel
+        val observer = new RecordingObserver
+        model.addObserver(observer)
+        model.startGame("a")
+
+        model.invalidInput()
+        observer.updates.last.event shouldBe Some(GameEvent.InvalidInput)
+
+        model.guess('a')
+        observer.updates.last.event shouldBe Some(GameEvent.Won)
+      }
+
+      "publish a game-over event for the final wrong guess" in {
+        val model = new HangmanModel
+        val observer = new RecordingObserver
+        model.addObserver(observer)
+        model.startGame("a", 1)
+
+        model.guess('z')
+
+        observer.updates.last.event shouldBe Some(GameEvent.GameOver)
       }
 
       "not notify for an unchanged state" in {
