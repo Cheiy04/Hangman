@@ -7,7 +7,11 @@ import hangman.view.ConsoleUI
 object Hangman {
   def main(args: Array[String]): Unit = {
     val word = args.headOption.getOrElse("hangman")
-    val controller = new Controller(new ConsoleUI(), new HangmanModel, word)
+    val model = new HangmanModel
+    val controller = new Controller(model, word)
+    val ui = new ConsoleUI(controller.handleInput)
+    model.addObserver(ui)
     controller.startGame()
+    ui.startInput()
   }
 }
